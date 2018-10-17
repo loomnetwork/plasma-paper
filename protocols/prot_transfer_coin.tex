@@ -1,0 +1,37 @@
+\begin{figure}
+\begin{minipage}{\columnwidth}
+\begin{framed}
+\centering { \bf Protocol for transfering a coin } 
+%\small
+
+\begin{itemize}
+    \item [] Transaction between two online parties, where the plasmachain operator honestly includes transactions and provides witness data availability for the transaction. If the operator is malicious and does not provide the witness data within a bound timeout $T$, the sender should exit, at the risk of being challenged.
+    \item[] on \textbf{user sends coin}
+        \begin{enumerate}
+            \item broadcast transaction
+            \item verify transaction inclusion
+            \item send merkle proofs of coin history to receiver
+        \end{enumerate}
+    \item[] on \textbf{user receives coin}
+        \begin{enumerate}
+            \item verify coin history
+            \item verify transaction inclusion
+            \item add coin to state and start watching for exits
+        \end{enumerate}
+    \item[] on \textbf{operator receives transaction}
+        \begin{enumerate}
+            \item add transaction to pending transactions pool
+        \end{enumerate}
+    \item[] on \textbf{operator publishes block}
+        \begin{enumerate}
+            \item construct merkle root from all pending transactions in merkle tree
+            \item commit block root to rootchain
+            \item make witness data available for every included transaction
+        \end{enumerate}
+\end{itemize}
+
+\end{framed}
+\end{minipage}
+\caption{Protocol for transfering a coin in Plasma Cash}
+\label{fig:transfer_coin}
+\end{figure}

@@ -1,0 +1,36 @@
+\paragraph{`Classic' Plasma} \label{ch2:classic_plasma}
+The initial vision of Plasma describes a mechanism which enables connecting
+blockchains to a base blockchain often referred to as the `rootchain' or the
+`mainchain' \cite{plasma}. The mainchain acts as the final arbitrator in
+the case of disputes as shown in Figure \ref{fig:many-chains}. Trees of plasmachains forming a hierarchy of blockchains similar to the court system would also be possible such that a dispute can be escalated all the way to the supreme court (the mainchain)
+
+%Diagram - Plasma-Summary-Many-Chains.dia
+\begin{figure}[H]
+    \makebox[\linewidth]{
+        \scalebox{0.75}{
+            \includegraphics[width=\linewidth]{figures/Plasma-Summary-Many-Chains.pdf}
+        }
+    }
+    \caption{
+        Multiple blockchains connected to a `mainchain' \cite{plasma}.
+    }
+    \label{fig:many-chains}
+\end{figure}
+
+A plasmachain that utilizes a potentially centralized consensus algorithm (e.g. Proof of Authority) derives its security from the mainchain's consensus algorithm. This is achieved by publishing a merklized\footnote{The transaction set of each block gets inserted in a Merkle Tree, and the merkle root of that tree gets published to a smart contract.} state root of each \textit{plasma block} to the mainchain. The transaction model used is UTXO based, similar to Bitcoin\footnote{https://en.bitcoin.it/wiki/Transaction}.
+
+\paragraph{Exits and challenges} An \textit{exit} is the mechanism by which a user expresses
+their intent to withdraw a UTXO from the plasmachain back to their account on
+the mainchain. After submitting the exit of a UTXO, the user needs to wait for
+a \textit{challenge period} to pass, during which other users can \textit{challenge}
+their exit, by providing proof that it is invalid\footnote{This is a common technique also used in payment channels, whereby invalid attestations can be challenged and the fraudulent user gets penalized if the challenge is successful.}. 
+
+A challenge is an attestation provided by another user, proving that the UTXO
+that is being exited is invalid or has been spent. Challenges can either be
+non-interactive, where the exit is instantly cancelled, or interactive where
+they require a response to the challenge before the \textit{challenge period} is over. 
+After the challenge period has passed, if there is no outstanding challenge, 
+an exit can be finalized, giving its owner the right to withdraw the amount 
+specified by the UTXO back to their mainchain account. 
+
+Exits and interactive challenges require users to attach a bond, as collateral. If a user's exit gets challenged and the challenge is valid, the collateral gets slashed and is sent to the user who reported the fraud. This incentivizes users to act honestly, and creates a crowdsourced system of watchers who are rewarded for reporting fraudulent activity.

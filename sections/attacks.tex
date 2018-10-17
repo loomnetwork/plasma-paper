@@ -1,0 +1,214 @@
+% An honest operator will not perform the above attacks, neither will they
+% include transactions that are attempting to double spend a coin or involve a
+% coin with invalid history. 
+
+In this section we model the types of fraud attempts that users can engage in with or without collusion with the plasmachain's consensus mechanism. We create challenges that guard against malicious behavior, guaranteeing safety as long as the party being attacked logs in\footnote{Once the user logs in, they should challenge any exits that have been initiated for the coins they own} at least once during the dispute period. The challenges described were first introduced in \cite{plasma_cash, plasma_cash_simple_spec} and are further explained in this
+paper for clarity.
+
+\subsection{Exit Spent Coin} \label{exit_spent_coin}
+
+This is an attack which does not require collusion of any of the transacting
+parties with the operator. An attacker (Alice) sends a coin to a victim (Bob). 
+After both parties verify its inclusion, the attacker immediately attempts to exit the spent coin\footnote{Alice also supplies a security bond as discussed previously, to incentivize users to challenge if her exit is fraudulent, like in this case}. Bob must log in before the end of the challenge period and provide proof of a direct spend of the coin. An example of this is shown in Figure \ref{fig:challenge_after}.
+
+\begin{figure}[H]
+	\makebox[\linewidth]{
+		\scalebox{0.8}{
+		\includegraphics[width=\linewidth]{figures/challenge_after.pdf}
+		}
+		}
+	\caption{
+        Alice attempts to exit the coin that was included in Block $N$. A
+        valid challenge provides the inclusion of the transaction at Block
+        $N+X$. Challenging with the transaction from Block $N+Y$ is not valid
+        since it assumes the validity of its ancestors.
+	}
+    \label{fig:challenge_after}
+\end{figure}
+
+In the reference implementation, this is implemented via
+\texttt{challengeAfter}.
+
+\subsection{Exit of a Double Spend}
+
+This attack requires that the operator allows the inclusion of double spend
+transactions (ie. two transactions involving the same coin and ancestor
+transactions but different new owners included in two different blocks). 
+In this case, The attacker (Alice) sends a coin to the victim (Bob). 
+After the inclusion of the transaction to Bob, Alice sends another transaction to her colluding party (Charlie). Note that the operator here should notice that Alice no longer owns the coin and reject the transaction, however we consider that they are also colluding with Alice to steal Bob's coin. From the mainchain contract's point of view, both Bob and Charlie are valid owners of the coin. 
+
+Charlie can exit by providing the same parent transaction as the one Bob, given that they both received it from the same spend of Alice. A valid challenge involves a transaction between Charlie's exiting and parent block, proving the double spend, as shown in Figure \ref{fig:challenge_between}. Users should additionally check the coin's history for double spends when receiving a coin. In the below example, Charlie can send the coin to another user, the verification of the merkle proofs will pass, however if they find transactions in the coin history with the same parent they should only accept the transaction coming from the earliest owner of the coin, since all the others are double spends.
+
+\begin{figure}[H]
+	\makebox[\linewidth]{
+		\scalebox{0.8}{
+		\includegraphics[width=\linewidth]{figures/challenge_between.pdf}
+		}
+		}
+	\caption{
+        Charlie attempts to exit the coin that was included in Block $N+Y$,
+        which is a double spend since the coin was already given to Bob at
+        block $N+X$. A valid challenge provides the inclusion of the
+        transaction at Block $N+X$. 
+    }
+    \label{fig:challenge_between}
+\end{figure}
+
+In the reference implementation, this is implemented via \texttt{challengeBetween}.
+
+\subsection{Exit with Invalid History} \label{exit_with_invalid_history}
+
+This type of attack requires collusion of the transacting parties with the operator to
+include transactions which do not have valid ancestors. As an example, consider
+the case that the victim (Alice) has a coin that she does not intend to spend. The attacker (Bob) colludes with the operator to create a transaction that
+references an invalid transaction from Alice to Bob, effectively giving Bob
+ownership of the coin, and sends that transaction to his colluding party (Charlie). After the transaction gets included, the transaction to Charlie can be used 
+as a valid ancestor transaction. Taking advantage of that, Charlie sends the coin to
+Dylan (another colluding party). From Dylan's perspective, he has a valid transaction signed from the
+previous owner of the coin, along with a valid ancestor which is the
+transaction from Bob to Charlie. Dylan can now perform a seemingly valid exit.
+
+Note that precisely because of this type of attack, we require that users must validate the full history of a coin they receive in a transaction. If Charlie was not a colluding party and they were a victim as well, he would not accept the transaction because he would have noticed that the coin has an invalid history.
+
+When Dylan initiates the exit, Alice notices that and submits an interactive
+challenge, with which she claims that she is the latest valid owner of the coin.
+We require this challenge to be interactive and bonded, as it may be the case
+that Alice is not the last valid owner of the coin, and a spend of her to another user may exist. 
+This leaves a window for a response to her challenge which invalidates it 
+(contrary to the previous two challenges which were non-interactive). Multiple of these challenges can be active for an exit. During finalization the coin must have zero pending challenges that were not responded to, in order for the exit to be successful. The full
+game is shown in Figure \ref{fig:challenge_before}.
+
+\begin{figure}[H]
+	\makebox[\linewidth]{
+		\scalebox{0.8}{
+		\includegraphics[width=\linewidth]{figures/challenge_before.pdf}
+		}
+		}
+	\caption{
+        Dylan attempts to exit a coin that has invalid history. Challenger
+        challenges by claiming that Alice is the last valid owner of the coin. A
+        valid response must be a valid transaction that nullifies that claim.
+        In this case this does not exist in this case since Bob and the Operator
+        colluded to have the invalid transaction included. An Alice-to-Bob
+        transaction could be used as a valid response as illustrated by the red
+        arrows.
+    }
+    \label{fig:challenge_before}
+\end{figure}
+
+In the reference implementation, this is implemented via \texttt{challengeBefore} and 
+\texttt{respondChallengeBefore}.
+
+% \subsubsection{Block Withholding and Invalid Blocks}
+% All Plasma Constructions require that an empowered entity, usually the plasma
+% publishes merkle roots of each block to the mainchain. This mechanism 
+% effectively finalize the transactions which were included in the committed 
+% Plasma Block. There is one caveat here, as the only information that is
+% published to the mainchain is the block root, and not the transactions that
+% were included in the block, which is the whole point! However, this requires
+% that users must be able to fetch the necessary information which proves that
+% their transaction was indeed included in the block which was published. A user
+% has no way of validating the inclusion of their transaction in the published
+% block, unless they are provided with a merkle proof of inclusion of that
+% transaction.
+% 
+% The only entity that has this information is the plasma operator. If the
+% operator is honest, it is to be expected that they will provide endpoints that
+% allow users to fetch and validate the merkle proofs of their transactions.
+% However, due to Plasma's threat model, the operator is not considered a trusted 
+% honest party.
+% As a result, various attack vectors exist:
+% \begin{enumerate}
+%     \item Include a transaction in a block, but refuse to provide a merkle
+%         proof of inclusion for it, disallowing a user to validate that the
+%         transaction was included
+%     \item Create an invalid transaction for a coin and withhold the merkle
+%         proof. The user has no way of knowing that an invalid transaction has
+%         been included.
+%     \item Not include the transaction at all, effectively censoring the user.
+% \end{enumerate}
+% 
+% Due to the possibility of lack of data availability, plasma challenge and
+% response games need to be constructed without assuming that the plasma operator
+% will be providing the necessary exit data for a coin, which is why when
+% transferring a coin a user needs to provide all the information adhoc, and not
+% expect that the operator will be providing that information.
+
+\subsection{Withhold and Challenge Exit of Spent Coin (Griefing)}
+
+Griefing is a special type of attack which exploits inefficiencies of
+the protocol to `bully' the transacting parties and either block them from some action
+(disallowing the exit of a coin for example) or forcing them to forfeit some
+constant amount of on-chain collateral when they attempt to settle a
+transaction on-chain. 
+
+In this attack, consider the scenario where Alice wants to send Bob a coin in
+exchange for a product. Bob will only send the product after he has validated
+the coin's history and after he has verified that the payment's transaction was included in a block.
+This requires that the operator makes the witness data for the transaction's inclusion available, so that both parties can validate the transaction's inclusion.
+Instead, the operator publishes a block including the transaction, however they withhold the witness data.
+
+As a result, neither Alice nor Bob can know if the transaction was actually included. At this point, Alice must assume that the operator is malicious and initiate an exit for the coin (she can pay Bob through an on-chain transaction). The operator can now challenge the exit with a \textit{Exit Spent Coin}
+challenge, as discussed in Section \ref{exit_spent_coin}. During this process,
+they are required to reveal witness data (which they were previously
+withholding). This provides enough information for both parties to know that the transaction
+was successfully included in a block. However, in this process Alice incurred a constant griefing vector by losing the collateral she put up when initiating the exit as shown in Figure \ref{fig:griefing_withhold}.
+
+\begin{figure}[H]
+	\makebox[\linewidth]{
+		\scalebox{0.6}{
+		\includegraphics[width=\linewidth]{figures/griefing_withhold.pdf}
+		}
+		}
+	\caption{
+        The operator steals the bond but the transaction was revealed.
+    }
+    \label{fig:griefing_withhold}
+\end{figure}
+
+This can be mitigated by constructing a different type of exit that forces the
+settlement of a withheld transaction to a receiving party other than the exitor. The
+coined term for this type of exit has been `limbo exit' and the transaction
+being withheld is an `in-flight' transaction, given that no party other than
+the operator can attest that the transaction has settled or not (and thus is in
+`limbo' or still `in-flight') \cite{limbo_exit}.
+
+% Not really a serious attack - we just allow mutliple challenges
+% \subsubsection{Last Moment Interactive Challenge}
+% 
+% A way to construct the challenge period would be to set it to be equal to
+% the maturity period and allow all types of challenges to be valid during that
+% time. This introduces an attack vector whereby an attacker could wait until the
+% last seconds before the maturity period of a coin is over and then submit an
+% interactive challenge. Even though the responder may have a valid transaction
+% to respond with and invalidate the challenge, they may not have enough time
+% given the challenge is placed almost instantly before the exit period is over.
+% 
+% A naive way to solve this issue would be to extend the maturity period (and
+% thus the time window for a response to a challenge) by some amount after every
+% challenge in order to give enough time to the responder to invalidate the
+% challenge. This has the disadvantage that a dedicated attacker could
+% potentially cause a Denial of Service (DoS) on the exit of a coin, delaying it
+% indefinitely at constant cost of a security bond, per challenge. This may be considered irrational behavior,
+% however if the coin being exited has a high value and the cost of forcing the
+% exit delay is not big enough, it may have positive effects to the attacker,
+% depending on the nature of payment being manifested by the coin.
+% 
+% The way we solve this is by explicitly allowing challenges only during the
+% first half of the maturity period,  as shown in Figure \ref{fig:exit_lifetime}.
+% On the one hand, this reduces the amount of time that a challenge can be
+% submitted, however it solves all types of griefing vectors. In order to add
+% that feature, we also require that an exit can be challenged multiple times,
+% and that an exit can only be finalized if it has no unresponded challenges, as
+% shown in Figure \ref{fig:exit_state_machine}. The attack vector in this case
+% would be where an operator submits an invalid exit, then creates an invalid
+% challenge with invalid history moments before the challenge period is over, and
+% then responds to it with an invalid response (again, we consider that the
+% operator can create arbitrary transactions off-chain and commit arbitrary
+% merkle roots on-chain). 
+% 
+% If only a single challenge was allowed, the operator
+% would be able to effectively respond with an invalid response, to their invalid
+% challenge about their invalid exit, allowing them to steal the exited coin. By
+% allowing multiple challenges, challengers can make sure that the challenges
+% they submit can only be responded to with valid transactions.

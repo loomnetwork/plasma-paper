@@ -1,0 +1,93 @@
+\def\sprite{Sprites\xspace}
+\newcommand{\msf}[1]{\ensuremath{{\mathsf {#1}}}}
+\newcommand{\mtt}[1]{\ensuremath{\mathtt {#1}}}
+\newcommand{\mcal}[1]{\ensuremath{\mathcal {#1}}}
+\newcommand{\val}{\msf{val}}
+\newcommand{\sn}{\msf{sn}}
+
+\newcommand{\hash}{\ensuremath{{\mathcal H}}}
+\newcommand{\adv}{\ensuremath{{\mathcal A}}}
+\newcommand{\Adv}{\adv}
+\newcommand{\A}{\adv}
+\newcommand{\samples}{\overset{\$}{\leftarrow}}
+\newcommand{\functionality}[1]{\ensuremath{{\cal F}_{\textnormal{\msf{{#1}}}}}}
+\newcommand{\F}{\functionality}
+\newcommand{\Z}{\ensuremath{{\mathcal Z}}}
+\newcommand{\G}[1]{{\cal G}_{\textnormal{\tiny {\uppercase{#1}}}}}
+\renewcommand{\S}{\ensuremath{\mathcal S}}
+
+\renewcommand{\L}{\mtt{L}}
+\newcommand{\R}{\mtt{R}}
+
+\newcommand{\pe}{{~\mathrel{+}\mathrel{\mkern-2mu}=~}}
+\newcommand{\me}{{~\mathrel{-}\mathrel{\mkern-2mu}=~}}
+
+\newcommand{\Fchain}{\F{Linked}}
+\newcommand{\Pichain}{{\Pi_\msf{Linked}}}
+\def\hsquad{\,\,\,\,\,}
+\newcommand{\pman}[1]{{{\textrm{PM}}[#1]}}
+
+%%%%%%%%%%%%
+\ifdefined \theorem
+\relax
+\else
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{example}{Example}
+\newtheorem{lemma}[theorem]{Lemma}  % A counter for Lemmas etc
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{assumption}[theorem]{Assumption}
+%\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+%\newenvironment{proof_sketch}{\quad\par\noindent{\bf Sketch of proof:~~}}{\qed\quad}
+%\newenvironment{proof}{\noindent{\bf Proof:~}}{\qed\quad}
+%\newenvironment{proof_sketch}{\noindent{\it Proof Sketch.}\hspace*{1em}}{\qed\medskip}
+\newenvironment{proof_sketch}{\noindent{\it Proof sketch.}}{\qed\medskip}
+\newenvironment{remark}{\noindent{\it Remark.}}{\qed\medskip}
+\fi
+%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% USE THIS AT THE END
+\newcommand{\ee}[1]{\ensuremath{#1}}
+\def\deltaonchain{\ee{\Delta}}
+\def\deltaoffchain{\ee{\Delta}}
+\def\deltain{\ee{\Delta}}
+\def\deltaout{\ee{\Delta}}
+\def\deltachain{\ee{\Delta}}
+\def\deltasend{\ee{\Delta}}
+\def\deltareceive{\ee{\Delta}}
+\def\deltachain{\ee{\Delta}}
+\def\deltaabort{\ee{\Delta}}
+\def\vri{\ee{v_{r,i}}}
+\def\vrip{\ee{v_{r,i}'}}
+\def\vrj{\ee{v_{r,j}}}
+\def\vrjp{\ee{v_{r,j}'}}
+\def\sri{\ee{\sigma_{r,i}}}
+\def\srj{\ee{\sigma_{r,j}}}
+\def\auxin{\ee{\msf{aux}_{in}}}
+\def\auxout{\ee{\msf{aux}_{out}}}
+\def\inr{\ee{\msf{in}_r}}
+\def\inrp{\ee{\msf{in}_r'}}
+\def\sim{\ee{\mathcal{S}}}
+% 
+% alternate full delta specs
+% \def\deltaonchain{\ee{\Delta_{\msf{OnChain}}}}
+% \def\deltaoffchain{\ee{\Delta_{\msf{OffChain}}}}
+% \def\deltain{\ee{\Delta_{in}}}
+% \def\deltaout{\ee{\Delta_{out}}}
+% \def\deltachain{\ee{\Delta_{chain}}}
+% % \def\vri{\ee{v_{i,r}}}
+% % \def\vrj{\ee{v_{j,r}}}
+% \def\deltasend{\ee{\Delta_{\msf{Send}}}}
+% \def\deltareceive{\ee{\Delta_{\msf{Receive}}}}
+% \def\deltaabort{\ee{\Delta_{abort}}}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "Makefile"
+%%% End:

@@ -1,0 +1,79 @@
+In this section we go summarize the existing proposals for improving the Plasma
+Cash protocol. In-depth analysis of each technique is not in scope and the
+reader is encouraged to refer to the citations for further insight.
+
+\subsection{Arbitrary Denomination Payments}
+
+The protocol for Plasma Cash is simplified compared to other Plasma versions
+due to the usage of non fungible tokens. This has the disadvantage that for financial use cases, such as buying a product, a user has to provide a coin with the exact product
+value, or provide a coin with higher value and expect another coin as change,
+similar to how physical cash is used in real life. 
+
+\paragraph{Splits and Merges} Proposals to allow coins to be split and merged are made in  \cite{xuanji_split_merge, dan_split_merge}. Splitting a token involves creating new tokens that
+represent a previously unified token. 
+% https://ethresear.ch/t/plasma-cash-plasma-with-much-less-per-user-data-checking/1298/53
+Merging involves creating a new token out of a list of separate unspent tokens.
+
+\paragraph{Plasma Debit} A protocol that allows arbitrary denomination payments of a coin is Plasma
+Debit which acts as an extension to Plasma Cash \cite{plasma_debit}. In Plasma
+Debit, instead of having a set denomination, each coin has a capacity value $v$
+and a varying value $a$\footnote{Each coin can be thought of as an account with maximum capacity of $v$}. The following conditions apply:
+
+\begin{enumerate}
+    \item after a coin is deposited $v = a$.
+    \item $a \leq v$
+    \item $a$ of the coin's denomination is owned by the coin's owner
+    \item $v - a$ of the coin's denomination is owned by the operator
+\end{enumerate}
+
+Each coin in Plasma Debit can be considered as a bidirectional payment channel
+between the Plasma Operator and the coin's owner. Arbitrary payments between two
+users can be initiated by reducing the balance of the sender's coin by an
+amount, and by atomically\footnote{Either all state transitions execute simultaneously, or none} increasing the balance of one of the receiver's coins
+by the same amount. The primary limitations in this construction is that the
+receiver must have a coin that is undercollateralized (e.g to receive X currency units, it must be the case that $X + a \leq v$). 
+
+Regarding the creation of undercollateralized coins, the protocol can be
+extended to allow the operator to deposit collateral, in order to
+generate coins with $a = 0$ on deposit, or increase the $v$ while keeping $a$ the same of an already existing coin. Markets can be expected to form where undercollateralized coins with
+larger $v$ have more value than coins with smaller $v$, similarly to how
+payment channels with more capacity are more useful due to their increased
+routing capabilities.
+
+Plasma Debit is a useful construct not only because it allows for arbitrary
+payments in Plasma Cash, but because it allows for behavior that can be
+characterized as transferrable-payment-channels. While traditional payment
+channels between two parties are non transferrable and require knowing all
+transacting parties beforehand, transferring a Plasma Debit coin from Alice to Bob is
+effectively the transfer of a payment channel between Alice and the operator to
+Bob.
+
+\paragraph{Plasma Defragmentation} When depositing a coin, users get multiple coins of very small equal value totalling the value of the deposited coin. Making a payment involves sending multiple of these small denomination coins to the receiver. By exiting a subtree of coins with the same owner, a user can efficiently withdraw and transact in arbitrary denominations. Users that utilize this technique eventually end up with various coins fragmented coins that are not efficiently exitable by a subtree. Defragmentation solves that by rearranging coins between the transacting parties so that users maintain lists with coins that have the most consecutive ids possible, allowing efficient subtree multi-exits.
+
+\subsection{Reduce user data checking}
+
+As discussed in Section \ref{verify_coin_history}, a receiver of a coin has to
+verify its history in order to make sure that the coin they are receiving is
+valid. Otherwise, they may be receiving a coin with invalid history, which
+if exited would be susceptible to \textit{Challenge with Invalid History} from Section
+\ref{exit_with_invalid_history}. A proof of inclusion or non-inclusion for a
+coin in a chain with $2^{16}$ coins is 512 bytes, per block. Assuming a Plasma
+Block frequency of 15 seconds\footnote{The Ethereum mainnet block time}, this
+means that after a year, a sender would be required to transfer more than 1 GB of
+data of proofs to the receiver, so that the receiver can validate the coin's
+history. This is expensive both in terms of bandwith and storage.
+
+\paragraph{Checkpointing of coin history} A solution to this problem is checkpointing the history of coins \cite{plasma_xt}. A plasmachain can
+be expected to have a large number of coins, and as a result a mechanism for
+efficient mass checkpointing of coins needs to be constructed. After a coin
+gets checkpointed, proving the validity of a coin's history requires checking the
+history of the coin from its latest checkpoint until the current block, which reduces the amount of merkle proofs that need to be validated.
+
+
+\paragraph{Compressing non-inclusion proofs} The largest part of data checking in Plasma Cash stems from the verification of non-inclusion proofs. ZK-SNARKs can be used to create a succinct constant-size proof of non-inclusion for multiple blocks for a coin which can be transmitted at low bandwith cost, and can be verified by the receiver in constant-time. Alternatively, a bloom filter hash can be published alongside the merkle root at each block by the operator, succinctly committing to the coin ids spent in each block, allowing users to verify the non-inclusion of a coin in blocks. This approach requires data availability from the plasma operator so that users can retrieve the raw bloom filter from its published hash, as well as revealing the bloom filter on-chain during an exit, which is expensive in storage terms. Finally, after an initialization phase involving a trapdoor parameter, an RSA accumulator can be published alongside the merkle root at each block by the operator, which allows batch proofs of non-inclusion of a coin, effectively reducing the amount of proofs required for the validation of a coin to two (one for its inclusion in a block, and an aggregate proof for all the non-inclusions) \cite{rsa_accum}.
+
+\subsection{Faster and Inexpensive Withdrawals}
+
+\paragraph{Tokenized Exits} A user needs to wait a predefined challenge period when initiating an exit, in order to allow other users to verify that the exit is valid. User experience can be improved by allowing the exitor to instantly redeem the value of their exit by tokenizing it as a NFT and selling it in an open marketplace. The buyer of the tokenized exit will wait the challenge period instead of the exitor \cite{fast_withdrawals}. The tokenized exit's buyout price is equal to the value of the coin that is under the exit. The tokenized exit can be expected to be sold at a discount, depending on the exitor's time preference.
+
+\paragraph{Optimistic Exits} By assuming that a user is honest, the merkle proofs and the raw transactions can be omitted during the initiation of an exit. This reduces the exit's required transaction fees. An additional non-interactive challenge must be provided which reveals the previously omitted exit parameters and if the challenge is successful cancels the exit \cite{optimistic}.

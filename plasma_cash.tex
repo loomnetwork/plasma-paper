@@ -1,0 +1,85 @@
+\documentclass[letterpaper, 11pt]{article}
+
+\usepackage{graphicx}
+%\usepackage{fullpage}
+\usepackage{pdfpages}
+\usepackage{color}
+\usepackage{framed}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage[font=footnotesize,labelfont=bf]{caption}
+%full name for appendix
+%\usepackage[title]{appendix}
+\usepackage{float}
+%\usepackage{parskip}
+%for code
+\usepackage{listings}
+%for math
+\usepackage{amsmath}
+\usepackage{subfig}
+
+\usepackage[margin=1.25in]{geometry}
+
+%Pargraph line breaks
+%\setlength{\parskip}{1em}
+%\setlength{\parindent}{0pt} % Default is 15pt.
+
+\graphicspath{ {images/} }
+\linespread{1.1}
+\setlength{\emergencystretch}{3em}
+
+
+%opening
+\title{\LARGE Plasma Cash: Towards more efficient Plasma constructions}
+\author{
+                Georgios Konstantopoulos\\
+                \footnotesize\href{mailto:me@gakonst.com}
+                        {\nolinkurl{me@gakonst.com}}
+        }   
+
+        \date{\today\\\small WORKING DRAFT }% \\\small https://loomx.io/plasma}
+
+\input{macros}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+    Plasma is a framework for scalable off-chain computation.
+    We describe and evaluate Plasma Cash, an improved Plasma construction 
+    which leverages non-fungible tokens and Sparse Merkle Trees to reduce the
+    data storage and bandwith requirements for users. 
+    We analyze the cryptoeconomic exit and challenge mechanisms used to keep user funds secured, even when the Plasma Cash chain's
+    consensus algorithm is compromised. A reference implementation is provided
+    for evaluation. Finally, we briefly discuss further improvements that
+    can be made to the Plasma Cash protocol such as arbitrary denomination
+    payments, less user data checking, fast and optimistic exits.
+\end{abstract}
+
+\tableofcontents
+
+\section{Introduction}
+\input{sections/intro}
+
+\section{Plasma Fundamentals}
+\input{sections/background}
+
+\section{Plasma Cash}
+\input{sections/plasma_cash}
+
+\section{Attacks on Plasma Cash} \label{ch:attacks}
+\input{sections/attacks}
+
+\section{Future Work}
+\input{sections/improvements}
+
+\section{Conclusion}
+In this paper we presented Plasma Cash, a plasma construction which can be used to construct non-custodial arbitrarily centralized sidechains which maintain safety, contrary to two-way pegged sidechains which do not allow the safe withdrawal of funds in case the sidechain consensus is compromised. Plasma Cash can be used to offload computation from the mainchain and improve scalability, which is a pressing issue for decentralized permissionless blockchains. We presented the required mechanisms as well as examples of how users interact with the system in order to deposit, transact and withdraw their funds. A reference implementation which is used in production is provided. Further improvements to the protocol are described, with respect to allowing arbitrary denomination payments, improving user experience, and making light clients more efficient.
+
+%bibliography
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}

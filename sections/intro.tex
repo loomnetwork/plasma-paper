@@ -1,0 +1,75 @@
+
+
+\textit{Plasma} is a scalability solution which may be used to increase the 
+throughput a smart contract enabled blockchain by allowing 
+interoperable transfer of assets between blockchains. Assets are deposited 
+from the sending blockchain (\textit{mainchain}), to
+the receiving blockchain (\textit{plasmachain}).
+Contrary to two-way pegged sidechains \cite{sidechains}, funds stored in
+\textit{plasmachains} can safely be withdrawn to the \textit{mainchain} through a
+cryptoeconomic game often referred to as an \textit{exit}. Safety is maintained even if the
+plasmachain's consensus mechanism is compromised, as long as the
+mainchain's consensus mechanism remains secure. It should be noted that
+Plasma improves throughput\footnote{The number of transactions that can be
+finalized every N seconds} rather than latency\footnote{The amount of time
+before a transaction is confirmed}.
+
+Plasma Cash leverages non-fungible tokens\footnote{A non-fungible token (NFT) is a unique token. Only one copy can exist for a specific NFT.} by making the funds deposited in the plasmachain independent and unique \cite{plasma_cash}. This results in a simpler settlement protocol for withdrawing funds back to the mainchain, by requiring less data checking on their coins, compared to the technique mentioned in the original paper \cite{plasma}.
+Discussions around this technique have been found across  the web, in ad-hoc 
+discussions and videoconferences \cite{implementers_call}. To date there exists no 
+complete resource on the security and scalability guarantees of Plasma Cash.
+
+\subsection{Contributions} \label{contribs}
+
+\paragraph{Protocol Analysis} We present a full analysis of the Plasma Cash
+technique, decomposing it to its components, explaining parts of the
+protocol and its functionalities in detail. We additionally explain the various
+extensions which can be added, along with the benefits and
+tradeoffs they give.
+
+\paragraph{Analysis of Attacks} We discuss the currently known attacks on
+Plasma and how a Plasma contract should be designed to mitigate these attacks. 
+With proper mechanism design and the attachment of `cryptoeconomic' bonds on
+actions that may result in faults we realize a system that is secure
+against adversaries, even if the adversaries have full control of the plasmachain's consensus mechanism.
+
+\paragraph{Implementation} A reference implementation of Plasma Cash is
+provided at \url{github.com/loomnetwork/plasma-cash}. It provides support for
+Ether and ERC20 tokens
+\footnote{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md}, 
+as well as ERC721 Non-Fungible tokens
+\footnote{https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md}. 
+The Plasma contract is token agnostic and extending it to support more types of
+token standards is a trivial process.
+
+\subsection{Related Work}
+
+In this section we will briefly describe work that is being done towards scalability via other techniques, each with its own tradeoffs. 
+There are two approaches to scalability. Protocol level scalability\footnote{E.g. sharding and bigger blocks}, often referred to as
+Layer 1, and scaling through computation via Layer 2. Plasma is considered a Layer 2 scalability solution.
+
+\paragraph{Sidechains} A sidechain is a blockchain which has its own independently secured consensus algorithm, and 
+is pegged to another blockchain \cite{sidechains}. Value can be transferred 
+    from one blockchain to another by relaying SPV proofs\footnote{Simple Payment Verification: Proofs that allow clients to verify the inclusion of a transaction in a block by verifying the block headers instead of downloading the whole block}. Verifying 
+    that blockchain A's event has occured on blockchain B requires SPV proofs which grow linearly with the number of blocks\footnote{Recent research has shown that the proof growth can be reduced to be logarithmic \cite{nipopows}}. It should be noted that users can only withdraw their funds back to the mainchain if the sidechain's consensus is secure and does not censor transactions or produce invalid state changes, meaning that the consensus mechanism is the sidechain's `custodian'. Using a sidechain for scalability is thus limited by the security and decentralization tradeoffs introduced by increasing capacity and throughput. It is the opinion of the author that the scalability benefits from sidechains are limited, and their primary use is for experimentation and interoperability.
+
+\paragraph{Payment Channel Networks} A payment channel is a mechanism which
+enables two parties to trade value in a rapid and feeless manner by exchanging signed messages which represent the latest state of the channel. The state can be settled on the underlying blockchain at any point in time. If a party attempts to settle an earlier state, the other party can challenge/dispute within a bound time period and penalize the fraudulent party. An on-chain transaction is required to initialize the channel. Channels can be unidirectional, bidirectional and can be linked together to create Payment Channel Networks, which allow two parties to trade with each other, even if they do not have a channel with each other, by routing payments through intermediaries. Payment channels feature instant finality since a payment can be considered complete the moment signed attestations about it are exchanged from the participating parties. In addition to the on-chain funding transaction required during the initialization of a channel, Payment Channel Networks (cf. Lightning Network, Raiden Network) require a capital lockup equal to the value being
+transferred, as well as potential fees paid to intermediaries for routing payments. 
+
+\paragraph{Generalized State Channels} Extending the idea of payment channels, generalized state channels tackle the problem of performing arbitrary computation off-chain, with the ability to settle on-chain, e.g play a battleship game off-chain, with the ability to settle a dispute about the general state of the game on-chain \cite{battleship, counterfactual}. 
+
+% \paragraph{Proof of X} Alternative consensus algorithms to Proof of Work may
+% provide partially the needed scalability
+% 
+% \paragraph{Sharding} While Plasma and Payment Channel networks are in the
+% category of solutions known as Layer 2-scaling, \textit{sharding} is a protocol
+% level scalability solution. The concept involves splitting the state of the
+% network in pieces of state called \textit{shards}, each containing their own
+% independent piece of state and transaction history. That way, certain nodes
+% process transactions only for certain shards, allowing the throughput of
+% transactions processed across all shards to be much higher compared to every
+% node of the network validating the same data.
+% % TODO further differentiate prhasing 
+% % https://medium.com/prysmatic-labs/how-to-scale-ethereum-sharding-explained-ba2e283b7fce
+
