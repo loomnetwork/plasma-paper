@@ -1,0 +1,52 @@
+\begin{figure}
+\begin{minipage}{\columnwidth}
+\begin{framed}
+    \centering { \bf A coin's state machine and the exit game. \\ Each coin has: $(s, T, c)$} for its state, maturity period, and challenge count. A coin can only be withdrawn when it is in state $q_c$. $T$ is a security parameter which represents the \textit{challenge period}. $now$ represents the current timestamp.
+%\small
+
+
+    \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.8cm,
+        semithick]
+        \tikzstyle{every state}=[fill=none,draw=black,text=black]
+
+        \node[initial,state] (A)                    {$q_a$};
+        \node[state]         (B) [right of=A] {$q_b$};
+        \node[accepting,state]         (C) [right of=B]       {$q_c$};
+
+        \path 
+        (A) edge [bend left=45]  node {E} (B)
+        (B) edge [bend left=45]  node {C} (A)
+        (B) edge [loop below] node {IC/R} (B)
+        (B) edge              node {F} (C)
+        (C) edge [bend left=65]             node {W} (A);
+    \end{tikzpicture}
+
+    \begin{enumerate}
+        \item StartExit (E) $(pitx, itx): (q_a, 0, 0) \rightarrow (q_b, T, 0)$. Require $pitx.blockNumber> itx.blockNumber$. Store:
+            \begin{enumerate}
+                \item $eBlk: itx.blockNumber$
+                \item $epBlk: pitx.blockNumber$
+                \item $eOwner: itx.newOwner$
+                \item $epOwner: pitx.newOwner$
+            \end{enumerate}
+        \item Challenge (C) $(itx): (q_b, T, c) \rightarrow (q_a, 0, 0)$
+            \begin{enumerate}
+                \item SpentCoin \textit{(challenge with a direct spend of the exiting transaction)}: $(itx.blockNumber > eBlk) \cap (itx.Sender = eOwner)$
+                \item DoubleSpend (\textit{challenge with a direct spend of the parent transaction)}: $(epBlk < itx.blockNumber \leq eBlk) \cap (itx.Sender = epOwner)$ 
+
+            \end{enumerate}
+        \item Interactive Challenge (IC) $(itx)$: (\textit{challenge with a transaction before the exit}). Require $(itx.blockNumber < epBlk) \cap (now < T/2): (q_b, T, c) \rightarrow (q_b, T, c+1)$. Store: 
+            \begin{enumerate}
+                \item $cOwner: itx.newOwner$ 
+                \item $cBlk: itx.blockNumber$ 
+            \end{enumerate}
+        \item Respond (R) $(itx):$ \textit{(respond with a direct spend of the challenge transaction)}: $itx.blockNumber > cBlk \cap itx.Sender = cOwner. (q_b, T, c) \rightarrow (q_b, T, c-1)$
+        \item Finalize (F): Requires $now > T$. $(q_b, T, 0) \rightarrow (q_c, T, 0)$
+        \item Withdraw (W): $(q_c, T, 0) \rightarrow (q_a, T, 0)$
+    \end{enumerate}
+
+\end{framed}
+\end{minipage}
+\caption{The basic exit game for a coin}
+\label{fig:transfer_coin}
+\end{figure}
