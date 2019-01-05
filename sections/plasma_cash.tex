@@ -68,8 +68,9 @@ following is expected to happen, in a non-fraudulent case:
     \item Vendor gives the product to buyer
 \end{enumerate}
 
-A more elaborate and general protocol for transferring a coin is provided in
-Figure \ref{fig:transfer_coin}.
+A transaction is a tuple: \texttt{Tx(slot, parentBlock, newOwner, prevOwnerSignature)}. A transaction that was included in a block is a combination of the previous tuple and a merkle proof for the block: \texttt{IncludedTx(tx, blkNumber, proof)}.
+
+The algorithm for verifying the history of a coin is given in Figure \ref{fig:transfer_coin}
 
 \input{protocols/prot_transfer_coin}
 
@@ -79,7 +80,7 @@ which a coin can be withdrawn from the plasmachain, and allow it to be
 transferred back to its owner's account on the mainchain. 
 
 Starting an exit for a coin requires providing the transaction that gave the
-exitor ownership of the coin signed by the previous owner in the coin's history, as well
+exitor ownership of the coin signed by the previous owner in the coin's history, \textbf{tx}, as well
 as a direct ancestor of that transaction (the reason the parent transaction must also be provided is explained in Section 4). Merkle proofs of inclusion need to also be provided for both transactions.
 
 \begin{figure}[H]

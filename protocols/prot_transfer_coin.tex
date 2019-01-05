@@ -1,37 +1,59 @@
 \begin{figure}
 \begin{minipage}{\columnwidth}
 \begin{framed}
-\centering { \bf Protocol for transfering a coin } 
+\centering { \bf Protocol for proving and verifying a coin's history } 
 %\small
 
-\begin{itemize}
-    \item [] Transaction between two online parties, where the plasmachain operator honestly includes transactions and provides witness data availability for the transaction. If the operator is malicious and does not provide the witness data within a bound timeout $T$, the sender should exit, at the risk of being challenged.
-    \item[] on \textbf{user sends coin}
-        \begin{enumerate}
-            \item broadcast transaction
-            \item verify transaction inclusion
-            \item send merkle proofs of coin history to receiver
-        \end{enumerate}
-    \item[] on \textbf{user receives coin}
-        \begin{enumerate}
-            \item verify coin history
-            \item verify transaction inclusion
-            \item add coin to state and start watching for exits
-        \end{enumerate}
-    \item[] on \textbf{operator receives transaction}
-        \begin{enumerate}
-            \item add transaction to pending transactions pool
-        \end{enumerate}
-    \item[] on \textbf{operator publishes block}
-        \begin{enumerate}
-            \item construct merkle root from all pending transactions in merkle tree
-            \item commit block root to rootchain
-            \item make witness data available for every included transaction
-        \end{enumerate}
-\end{itemize}
+The prover sends two lists of \texttt{IncludedTx} elements to the Verifier, \texttt{inclTx} and \texttt{exclTx}. The verifier has access to the Merkle Roots from the deployed Plasma Contract on Ethereum via the variable \texttt{root[blockNumber]} as well as all the committed block numbers for the coin, via the variable \texttt{blocks}.
+
+We consider a VerifyMerkleProof(slot, hash, proof, blockNumber) algorithm which is able to verify the merkle proof for a coin at a certain block number.
+
+\begin{algorithmic}[1]
+    \State ${inclTx, exclTx} \gets proof$
+    \State // Ensure completion of included and excluded transactions' blocks
+    \State Assert $inclTx.keys \cup exclTx.keys = blocks$ 
+    \State // Ensure separation between blocks in included and excluded transactions
+    \State Assert $inclTx.keys \cap exclTx.keys = \emptyset$
+    \State $LastBlock \gets DepositBlock$
+    \State $LastOwner \gets DepositOwner$
+
+    \State // Check the deposit transaction
+    \If{!VerifyMerkleProof(slot, inclTx[DepositBlock].tx.hash, itx[DepositBlock].proof, itx[DepositBlock].blkNumber)}
+        \State \Return false
+    \EndIf
+    \State delete inclTx[DepositBlock]
+    \State // Check that included transactions are correct in the included blocks
+    \For {itx in inclTx} // Skip the deposit transaction
+    \If{!VerifyMerkleProof(slot, itx.tx.hash, itx.proof, itx.blkNumber)}
+        \State \Return false
+    \EndIf
+
+    \State // Reject double spends
+    \If{$LastBlock \neq itx.tx.parentBlock$}
+        \State \Return false
+    \EndIf
+
+    \State // Accept spends only with valid signatures
+    \State $Sender \gets ecrecover(itx.tx.hash, itx.tx.sig)$
+    \If{$Sender \neq LastOwner$}
+        \State \Return false
+    \EndIf
+
+    \State $LastBlock \gets itx.blkNumber$
+    \State $LastOwner \gets itx.tx.newOwner$
+    \EndFor
+
+    \State // Check that there are no transactions in the excluded blocks
+    \For {itx in exclTx} // itx.tx should be empty
+        \If{!VerifyMerkleProof(slot, emptyHash, itx.proof, itx.blkNumber)}
+            \State \Return false
+        \EndIf
+    \EndFor
+\end{algorithmic}
+
 
 \end{framed}
 \end{minipage}
-\caption{Protocol for transfering a coin in Plasma Cash}
+\caption{Proving and verifying a coin's history in Plasma Cash}
 \label{fig:transfer_coin}
 \end{figure}
