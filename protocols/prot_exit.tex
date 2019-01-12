@@ -1,7 +1,7 @@
 \begin{figure}
 \begin{minipage}{\columnwidth}
 \begin{framed}
-    \centering { \bf A coin's state machine and the exit game. \\ Each coin has: $(s, T, c)$} for its state, maturity period, and challenge count. A coin can only be withdrawn when it is in state $q_c$. $T$ is a security parameter which represents the \textit{challenge period}. $now$ represents the current timestamp.
+    \centering { \bf A coin's state machine and the exit game. \\ Each coin has: $(s, T, c)$} for its state, maturity period, and challenge count. A coin can only be withdrawn when it is in state $q_c$. $T$ is a security parameter which represents the \textit{challenge period}. $now$ represents the current timestamp. \\ Each included transaction (itxn) is of the form (blockNumber, proof, tx). \\ itx.Sender is the address recovered from the signature on the hash of itx.tx.
 %\small
 
 
@@ -22,7 +22,7 @@
     \end{tikzpicture}
 
     \begin{enumerate}
-        \item StartExit (E) $(pitx, itx): (q_a, 0, 0) \rightarrow (q_b, T, 0)$. Require $pitx.blockNumber> itx.blockNumber$. Store:
+        \item StartExit (E) $(pitx, itx): (q_a, 0, 0) \rightarrow (q_b, T, 0)$. Require $pitx.blockNumber < itx.blockNumber$. Store:
             \begin{enumerate}
                 \item $eBlk: itx.blockNumber$
                 \item $epBlk: pitx.blockNumber$
@@ -40,9 +40,9 @@
                 \item $cOwner: itx.newOwner$ 
                 \item $cBlk: itx.blockNumber$ 
             \end{enumerate}
-        \item Respond (R) $(itx):$ \textit{(respond with a direct spend of the challenge transaction)}: $itx.blockNumber > cBlk \cap itx.Sender = cOwner. (q_b, T, c) \rightarrow (q_b, T, c-1)$
+        \item Respond (R) $(itx):$ \textit{(respond with a direct spend of the challenge transaction)}: $cBlk < itx.blockNumber \leq epBlk \cap itx.Sender = cOwner. (q_b, T, c) \rightarrow (q_b, T, c-1)$
         \item Finalize (F): Requires $now > T$. $(q_b, T, 0) \rightarrow (q_c, T, 0)$
-        \item Withdraw (W): $(q_c, T, 0) \rightarrow (q_a, T, 0)$
+        \item Withdraw (W): $(q_c, T, 0) \rightarrow (q_a, 0, 0)$
     \end{enumerate}
 
 \end{framed}
